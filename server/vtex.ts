@@ -10,6 +10,7 @@ export function toOffer(chain: Chain, p: any): Offer | null {
   if (!item || !offer) return null;
 
   const name: string = p.productName ?? item.name ?? "";
+  const path = p.link ? new URL(p.link, `https://${chain.domain}`).pathname : `/${p.linkText}/p`;
   const quantity = parseQuantity(item.nameComplete ?? name) ?? parseQuantity(name);
   const price: number = offer.Price;
   return {
@@ -22,7 +23,7 @@ export function toOffer(chain: Chain, p: any): Offer | null {
     listPrice: offer.ListPrice > price ? offer.ListPrice : price,
     available: (offer.AvailableQuantity ?? 0) > 0,
     image: item.images?.[0]?.imageUrl ?? null,
-    url: `https://${chain.domain}${p.link?.startsWith("/") ? p.link : `/${p.linkText}/p`}`,
+    url: `https://${chain.domain}${path}`,
     quantity,
     unitPrice: unitPrice(price, quantity),
   };
@@ -30,7 +31,7 @@ export function toOffer(chain: Chain, p: any): Offer | null {
 
 export async function searchChain(chain: Chain, query: string, count = 12): Promise<ChainResult> {
   const url =
-    `https://${chain.domain}/api/io/_v/api/intelligent-search/product_search/` +
+    `https://${chain.apiDomain ?? chain.domain}/api/io/_v/api/intelligent-search/product_search/` +
     `?query=${encodeURIComponent(query)}&count=${count}&page=1&locale=pt-BR&hideUnavailableItems=true`;
   try {
     const resp = await fetch(url, {

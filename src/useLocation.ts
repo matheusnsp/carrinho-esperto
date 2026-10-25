@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { usePersistentState } from "./usePersistentState";
 
 export interface LatLon {
   lat: number;
@@ -19,7 +20,8 @@ async function placeName({ lat, lon }: LatLon, signal: AbortSignal): Promise<str
 }
 
 export function useGeolocation() {
-  const [position, setPosition] = useState<LatLon | null>(null);
+  // Lembra a última posição para não pedir de novo a cada visita.
+  const [position, setPosition] = usePersistentState<LatLon | null>("ce:local", null);
   const [label, setLabel] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);

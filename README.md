@@ -7,7 +7,7 @@ Compare o preço de um produto nos supermercados perto de você.
 ## Como funciona
 
 1. **Localização**: o navegador pega sua posição (ou você clica no mapa).
-2. **Mercados próximos**: o servidor consulta o [OpenStreetMap](https://www.openstreetmap.org) (API Overpass) e lista os supermercados num raio de 1 a 10 km.
+2. **Mercados próximos**: o navegador consulta o [OpenStreetMap](https://www.openstreetmap.org) (API Overpass, ou o [Photon](https://photon.komoot.io) se o Overpass estiver fora) e lista os supermercados num raio de 1 a 10 km.
 3. **Preços**: cada rede reconhecida que tem loja online na plataforma **VTEX** (Zona Sul, Prezunic, Hortifruti, Carrefour, Sam's Club…) é consultada pela API pública de busca:
    `https://<loja>/api/io/_v/api/intelligent-search/product_search/?query=arroz`
 4. **Comparação**:
@@ -39,13 +39,13 @@ npm start         # serve a API e o site em http://localhost:3001
 2. **Add New → Project**, escolha o repositório `carrinho-esperto` e clique em **Deploy** (as configurações já estão em `vercel.json`).
 3. Cada `git push` na `main` publica uma nova versão automaticamente.
 
-O site vai para a CDN da Vercel e a pasta `api/` vira funções serverless (`/api/search`, `/api/nearby`, `/api/chains`). As buscas ficam em cache por 10 minutos.
+O site vai para a CDN da Vercel e a pasta `api/` vira funções serverless (`/api/search`, `/api/chains`). As buscas ficam em cache por 10 minutos.
 
 ## Estrutura
 
 ```
 shared/   código usado pelo site e pelo servidor (tipos, redes, quantidade, comparação)
-server/   lógica da API (handlers.ts) + servidor Express para rodar localmente
+server/   lógica da API (handlers.ts, vtex.ts) + servidor Express para rodar localmente
 api/      funções da Vercel (usam os mesmos handlers)
 src/      site React (Vite + Leaflet)
 tests/    testes

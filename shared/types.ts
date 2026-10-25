@@ -1,8 +1,10 @@
 export interface Chain {
   id: string;
   name: string;
-  /** Domínio da loja online (VTEX). */
+  /** Domínio da loja online (VTEX), usado nos links dos produtos. */
   domain: string;
+  /** Domínio para a API, quando o site bloqueia consultas automáticas. */
+  apiDomain?: string;
   /** Cor usada no mapa e nos selos. */
   color: string;
   /** Termos que identificam a rede nos dados do OpenStreetMap (sem acento, minúsculo). */

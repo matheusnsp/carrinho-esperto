@@ -5,6 +5,7 @@ import { SortMode, flattenOffers, groupByEan } from "../shared/compare";
 import { formatDistance } from "../shared/geo";
 import { fetchNearby, searchProducts } from "./api";
 import { useGeolocation } from "./useLocation";
+import { setCodec, usePersistentState } from "./usePersistentState";
 import { StoreMap } from "./components/StoreMap";
 import { NearbyList } from "./components/NearbyList";
 import { OfferCard, OfferSkeleton } from "./components/OfferCard";
@@ -19,15 +20,16 @@ const RADII = [1000, 3000, 5000, 10000];
 
 export default function App() {
   const geo = useGeolocation();
-  const [radius, setRadius] = useState(3000);
+  const [radius, setRadius] = usePersistentState("ce:raio", 3000);
   const [stores, setStores] = useState<NearbyStore[]>([]);
   const [storesLoading, setStoresLoading] = useState(false);
   const [storesError, setStoresError] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
-  const [onlyNearby, setOnlyNearby] = useState(true);
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
-  const [sort, setSort] = useState<SortMode>("price");
+  const [onlyNearby, setOnlyNearby] = usePersistentState("ce:soPerto", true);
+  // Redes que a pessoa desmarcou; fica salvo entre buscas e visitas.
+  const [hidden, setHidden] = usePersistentState("ce:desmarcados", new Set<string>(), setCodec);
+  const [sort, setSort] = usePersistentState<SortMode>("ce:ordem", "price");
   const [result, setResult] = useState<SearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -62,7 +64,6 @@ export default function App() {
     setQuery(q);
     setSearching(true);
     setSearchError(null);
-    setHidden(new Set());
     try {
       setResult(await searchProducts(q.trim(), chainIds));
     } catch (e) {

@@ -10,7 +10,15 @@ export const CHAINS: Chain[] = [
   { id: "zonasul", name: "Zona Sul", domain: "www.zonasul.com.br", color: "#0a7d3b", osmMatch: ["zona sul"] },
   { id: "prezunic", name: "Prezunic", domain: "www.prezunic.com.br", color: "#e30613", osmMatch: ["prezunic"] },
   { id: "hortifruti", name: "Hortifruti", domain: "www.hortifruti.com.br", color: "#f28c00", osmMatch: ["hortifruti", "natural da terra"] },
-  { id: "carrefour", name: "Carrefour", domain: "mercado.carrefour.com.br", color: "#1e5bc6", osmMatch: ["carrefour"] },
+  {
+    id: "carrefour",
+    name: "Carrefour",
+    domain: "mercado.carrefour.com.br",
+    // O site bloqueia robôs (503); o domínio interno da VTEX responde normalmente.
+    apiDomain: "carrefourbrfood.vtexcommercestable.com.br",
+    color: "#1e5bc6",
+    osmMatch: ["carrefour"],
+  },
   { id: "samsclub", name: "Sam's Club", domain: "www.samsclub.com.br", color: "#0067a0", osmMatch: ["sam's club", "sams club"] },
   { id: "mambo", name: "Mambo", domain: "www.mambo.com.br", color: "#c8102e", osmMatch: ["mambo"] },
   { id: "covabra", name: "Covabra", domain: "www.covabra.com.br", color: "#00843d", osmMatch: ["covabra"] },

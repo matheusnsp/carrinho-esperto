@@ -17,6 +17,17 @@ function Recenter({ position, radius }: { position: LatLon | null; radius: numbe
   return null;
 }
 
+/** Sem isso o Leaflet deixa uma faixa cinza quando o mapa muda de tamanho. */
+function AutoResize() {
+  const map = useMap();
+  useEffect(() => {
+    const obs = new ResizeObserver(() => map.invalidateSize());
+    obs.observe(map.getContainer());
+    return () => obs.disconnect();
+  }, [map]);
+  return null;
+}
+
 function ClickToSet({ onPick }: { onPick: (p: LatLon) => void }) {
   useMapEvents({ click: (e) => onPick({ lat: e.latlng.lat, lon: e.latlng.lng }) });
   return null;
@@ -37,6 +48,7 @@ export function StoreMap({ position, radius, stores, onPick }: Props) {
         url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <Recenter position={position} radius={radius} />
+      <AutoResize />
       <ClickToSet onPick={onPick} />
       {position && (
         <>

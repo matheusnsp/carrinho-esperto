@@ -1,5 +1,6 @@
 import type { NearbyStore, SearchResponse } from "../shared/types";
 import { queryOverpass } from "../shared/overpass";
+import { queryPhoton } from "../shared/photon";
 
 async function getJson<T>(url: string): Promise<T> {
   const resp = await fetch(url);
@@ -14,11 +15,14 @@ export function searchProducts(query: string, chainIds: string[]): Promise<Searc
   return getJson(`/api/search?${params}`);
 }
 
-/** Busca mercados direto do navegador; se não der, pede ao nosso servidor. */
+/**
+ * Busca mercados direto do navegador (os servidores do OpenStreetMap costumam recusar a Vercel).
+ * Tenta o Overpass, que lista tudo; se ele estiver fora, usa o Photon.
+ */
 export async function fetchNearby(lat: number, lon: number, radius: number): Promise<NearbyStore[]> {
   try {
-    return await queryOverpass(lat, lon, radius, { timeoutMs: 12_000 });
+    return await queryOverpass(lat, lon, radius, { timeoutMs: 10_000 });
   } catch {
-    return getJson(`/api/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
+    return queryPhoton(lat, lon, radius);
   }
 }

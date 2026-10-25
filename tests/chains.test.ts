@@ -73,3 +73,38 @@ describe("queryOverpass", () => {
     }
   });
 });
+
+describe("Photon", () => {
+  it("filtra pelo raio, ignora o que não é mercado e remove repetidos", async () => {
+    const { parseFeatures } = await import("../shared/photon");
+    const f = (id: number, name: string, lon: number, lat: number, value = "supermarket") => ({
+      geometry: { coordinates: [lon, lat] },
+      properties: { osm_type: "N", osm_id: id, osm_key: "shop", osm_value: value, name, street: "Rua X", district: "Copacabana" },
+    });
+    const stores = parseFeatures(
+      [f(1, "Supermercado Zona Sul", -43.1823, -22.9712), f(1, "Supermercado Zona Sul", -43.1823, -22.9712), f(2, "Prezunic", -43.3, -22.9), f(3, "Farmácia", -43.1823, -22.9712, "chemist")],
+      -22.9711,
+      -43.1822,
+      3000,
+    );
+    expect(stores).toHaveLength(1);
+    expect(stores[0].chainId).toBe("zonasul");
+    expect(stores[0].address).toBe("Rua X - Copacabana");
+  });
+});
+
+describe("Carrefour", () => {
+  it("consulta a API pelo domínio interno e gera links para o site", async () => {
+    const { toOffer } = await import("../server/vtex");
+    const { chainById } = await import("../shared/chains");
+    const chain = chainById("carrefour")!;
+    expect(chain.apiDomain).toContain("vtexcommercestable");
+    const o = toOffer(chain, {
+      productId: "1",
+      productName: "Arroz Camil 5kg",
+      link: "https://carrefourbrfood.vtexcommercestable.com.br/arroz-camil-5kg/p",
+      items: [{ ean: "789", images: [], sellers: [{ commertialOffer: { Price: 22.29, ListPrice: 22.29, AvailableQuantity: 5 } }] }],
+    });
+    expect(o?.url).toBe("https://mercado.carrefour.com.br/arroz-camil-5kg/p");
+  });
+});
