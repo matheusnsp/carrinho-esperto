@@ -8,8 +8,9 @@ Compare o preço de um produto nos supermercados perto de você.
 
 1. **Localização**: o navegador pega sua posição (ou você clica no mapa).
 2. **Mercados próximos**: o navegador consulta o [OpenStreetMap](https://www.openstreetmap.org) (API Overpass, ou o [Photon](https://photon.komoot.io) se o Overpass estiver fora) e lista os supermercados num raio de 1 a 10 km.
-3. **Preços**: cada rede reconhecida que tem loja online na plataforma **VTEX** (Zona Sul, Prezunic, Hortifruti, Carrefour, Sam's Club…) é consultada pela API pública de busca:
+3. **Preços**: cada rede reconhecida que tem loja online na plataforma **VTEX** (Zona Sul, Prezunic, Hortifruti, Carrefour) é consultada pela API pública de busca:
    `https://<loja>/api/io/_v/api/intelligent-search/product_search/?query=arroz`
+   **Guanabara** não vende online: o app lê a lista de preços que eles publicam no site (com validade) e busca nela.
    **Pão de Açúcar e Extra** usam a API do GPA (`api.vendas.gpa.digital`). O preço muda por loja, então o app usa o CEP da sua localização para escolher a loja que atende você.
 4. **Comparação**:
    - ofertas ordenadas por menor preço ou por **preço por kg/litro** (a quantidade é lida do nome: "5kg", "500g", "6x170g", "2L"…);
@@ -69,5 +70,5 @@ Edite `shared/chains.ts`. A rede precisa ter loja online VTEX. Para conferir, ab
 
 - Preço regionalizado: algumas redes mudam o preço por CEP (VTEX `regionId`), o que permite mostrar o preço da loja mais próxima.
 - Lista de compras: somar o carrinho inteiro em cada mercado e dizer onde sai mais barato.
-- Redes fora da VTEX (Guanabara, Mundial, Pão de Açúcar, Assaí…).
+- Outras redes do Rio (Mundial, Assaí, Atacadão…).
 - Cache das buscas no servidor.

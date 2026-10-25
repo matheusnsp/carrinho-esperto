@@ -111,7 +111,7 @@ a { color: inherit; }
   .loc-pill { font-size: 0.8rem; padding: 0.45rem 0.7rem; }
 }
 @media (max-width: 980px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
   .side { position: static; order: -1; }
 }
 
@@ -129,10 +129,11 @@ a { color: inherit; }
 }
 .coverage-list {
   list-style: none; padding: 0; margin: 1rem 0 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); grid-auto-rows: 1fr; gap: 0.5rem;
 }
+.coverage-list li { display: flex; }
 .cov {
-  width: 100%; display: flex; align-items: center; gap: 0.6rem; text-align: left;
+  width: 100%; height: 100%; min-height: 76px; display: flex; align-items: center; gap: 0.6rem; text-align: left;
   border: 1.5px solid var(--line); background: #fff; border-radius: 14px; padding: 0.55rem 0.7rem;
   transition: all 0.15s;
 }
@@ -142,7 +143,8 @@ a { color: inherit; }
 }
 .cov-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .cov-name { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cov-status { font-size: 0.76rem; color: var(--muted); }
+.cov-status, .cov-note { font-size: 0.76rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cov-note { font-size: 0.72rem; opacity: 0.85; }
 .cov-check {
   width: 20px; height: 20px; border-radius: 6px; flex: none; display: grid; place-items: center;
   font-size: 0.75rem; font-weight: 800; border: 1.5px solid var(--line);
@@ -301,9 +303,16 @@ a { color: inherit; }
 .nearby-stats strong { font-size: 1.35rem; font-weight: 800; color: var(--forest); line-height: 1.1; }
 .nearby-stats span { font-size: 0.78rem; color: var(--muted); }
 .nearby ul { list-style: none; margin: 0.6rem 0 0; padding: 0; max-height: 300px; overflow: auto; }
-.nearby li { display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0.15rem; border-bottom: 1px solid #f1efe9; }
+.nearby li { border-bottom: 1px solid #f1efe9; }
 .nearby li:last-child { border-bottom: 0; }
-.nearby li.dim { opacity: 0.55; }
+.nearby li.dim .store-row { opacity: 0.55; }
+.nearby li.open { background: #f7f6f2; border-radius: 12px; border-bottom-color: transparent; }
+.nearby li.open .directions { padding: 0 0.5rem 0.6rem; }
+.store-row {
+  width: 100%; display: flex; align-items: center; gap: 0.65rem; padding: 0.55rem 0.4rem;
+  border: 0; background: transparent; text-align: left; border-radius: 12px;
+}
+.store-row:hover { background: #f7f6f2; }
 .avatar { width: 30px; height: 30px; border-radius: 9px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 0.8rem; }
 .nearby li.dim .avatar { color: var(--ink-2); }
 .store-name { display: block; font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -318,9 +327,56 @@ a { color: inherit; }
 .foot { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 1rem 1rem 2.5rem; }
 
 @media (max-width: 640px) {
-  .coverage-list { grid-template-columns: 1fr 1fr; }
-  .grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .coverage-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
   .card-media { height: 120px; }
-  .map { height: 210px; }
+  .map { height: 260px; }
   .nearby ul { max-height: 190px; }
 }
+
+/* ---------- Mapa: alfinetes e rotas ---------- */
+.pin {
+  display: grid; place-items: center; width: 30px; height: 30px; margin-top: 0;
+  background: var(--c); border: 2.5px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.3); transition: transform 0.15s;
+}
+.pin b { transform: rotate(45deg); color: #fff; font: 800 13px/1 "Plus Jakarta Sans", system-ui, sans-serif; }
+.pin.pin-selected { transform: rotate(-45deg) scale(1.25); box-shadow: 0 0 0 4px rgb(200 241 105 / 0.9), 0 3px 8px rgb(0 0 0 / 0.3); }
+.pin-dot { display: block; width: 12px; height: 12px; border-radius: 50%; background: #9aa5a0; border: 2px solid #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.3); }
+.pin-dot.pin-selected { background: var(--ink); }
+.pin-me {
+  display: block; width: 22px; height: 22px; border-radius: 50%; background: #2563eb; border: 3px solid #fff;
+  box-shadow: 0 0 0 0 rgb(37 99 235 / 0.5), 0 2px 6px rgb(0 0 0 / 0.3); animation: me-pulse 2s infinite;
+}
+@keyframes me-pulse { 70% { box-shadow: 0 0 0 14px rgb(37 99 235 / 0), 0 2px 6px rgb(0 0 0 / 0.3); } 100% { box-shadow: 0 0 0 0 rgb(37 99 235 / 0), 0 2px 6px rgb(0 0 0 / 0.3); } }
+
+.leaflet-popup-content { margin: 12px 14px; }
+.popup { display: flex; flex-direction: column; gap: 3px; width: 190px; font-size: 0.82rem; }
+.popup .directions { flex-direction: column; }
+.popup .dir-btn { justify-content: flex-start; }
+.popup strong { font-size: 0.95rem; }
+.popup-ok { color: var(--forest); font-weight: 600; }
+.popup-muted { color: var(--muted); }
+.popup .directions { margin-top: 6px; }
+
+.directions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.dir-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none;
+  border: 1.5px solid var(--line); background: #fff; border-radius: 999px;
+  padding: 0.35rem 0.7rem 0.35rem 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--ink) !important;
+}
+.dir-btn:hover { border-color: var(--forest); }
+.directions.compact .dir-btn { font-size: 0.74rem; padding: 0.25rem 0.55rem 0.25rem 0.3rem; }
+.dir-icon { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 0.68rem; font-weight: 800; }
+.dir-google { background: #1a73e8; }
+.dir-apple { background: #111; }
+.dir-waze { background: #33ccff; color: #0b2a3a; }
+
+.best-actions { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.9rem; }
+.btn-ghost {
+  background: rgb(255 255 255 / 0.1); color: #fff; border: 1px solid rgb(255 255 255 / 0.22);
+  padding: 0.4rem 0.8rem; font-size: 0.8rem; font-weight: 600;
+}
+.btn-ghost:hover { background: rgb(255 255 255 / 0.2); }
+.link-btn { display: block; margin-top: 0.4rem; background: none; border: 0; padding: 0; color: inherit; font-weight: 700; text-decoration: underline; }
+.map { height: 320px; }

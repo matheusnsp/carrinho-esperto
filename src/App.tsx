@@ -24,6 +24,8 @@ export default function App() {
   const [stores, setStores] = useState<NearbyStore[]>([]);
   const [storesLoading, setStoresLoading] = useState(false);
   const [storesError, setStoresError] = useState<string | null>(null);
+  const [storesAttempt, setStoresAttempt] = useState(0);
+  const [selectedStore, setSelectedStore] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
   const [onlyNearby, setOnlyNearby] = usePersistentState("ce:soPerto", true);
@@ -46,14 +48,23 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [geo.position, radius]);
+  }, [geo.position, radius, storesAttempt]);
 
-  /** Distância até a loja mais próxima de cada rede. */
-  const nearestByChain = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const s of stores) if (s.chainId && !m.has(s.chainId)) m.set(s.chainId, s.distanceM);
+  /** Loja mais próxima de cada rede (a lista já vem ordenada por distância). */
+  const nearestStore = useMemo(() => {
+    const m = new Map<string, NearbyStore>();
+    for (const s of stores) if (s.chainId && !m.has(s.chainId)) m.set(s.chainId, s);
     return m;
   }, [stores]);
+  const nearestByChain = useMemo(
+    () => new Map([...nearestStore].map(([id, s]) => [id, s.distanceM])),
+    [nearestStore],
+  );
+
+  function showStore(id: string) {
+    setSelectedStore(id);
+    document.querySelector(".side")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   const nearbyChainIds = [...nearestByChain.keys()];
   const useNearbyFilter = onlyNearby && nearbyChainIds.length > 0;
@@ -177,7 +188,8 @@ export default function App() {
                   total={offers.length}
                   storesCount={visible.filter((r) => r.offers.length).length}
                   sameProductMax={cheapestGroup?.offers[cheapestGroup.offers.length - 1].price}
-                  distanceM={nearestByChain.get(cheapest.chainId)}
+                  nearest={nearestStore.get(cheapest.chainId)}
+                  onShowOnMap={showStore}
                 />
               )}
               <SameProduct groups={groups} />
@@ -225,11 +237,27 @@ export default function App() {
                 </button>
               ))}
             </div>
-            <StoreMap position={geo.position} radius={radius} stores={stores} onPick={geo.setPosition} />
+            <StoreMap
+              position={geo.position}
+              radius={radius}
+              stores={stores}
+              selectedId={selectedStore}
+              onSelect={setSelectedStore}
+              onPick={geo.setPosition}
+            />
             {geo.error && <div className="alert">{geo.error}</div>}
             {storesLoading && <p className="hint">Procurando mercados…</p>}
-            {storesError && <div className="alert alert-error">Erro ao buscar mercados: {storesError}</div>}
-            {geo.position && !storesLoading && !storesError && <NearbyList stores={stores} />}
+            {storesError && (
+              <div className="alert alert-error">
+                {storesError}
+                <button className="link-btn" onClick={() => setStoresAttempt((n) => n + 1)}>
+                  Tentar de novo
+                </button>
+              </div>
+            )}
+            {geo.position && !storesLoading && !storesError && (
+              <NearbyList stores={stores} selectedId={selectedStore} onSelect={setSelectedStore} />
+            )}
           </div>
         </aside>
       </main>

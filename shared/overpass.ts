@@ -69,8 +69,9 @@ export async function queryOverpass(
         return parseElements(data.elements, lat, lon);
       }),
     );
-  } catch {
-    throw new Error("O OpenStreetMap não respondeu. Tente de novo em instantes.");
+  } catch (err) {
+    const first = err instanceof AggregateError ? err.errors[0] : err;
+    throw new Error(first instanceof Error ? first.message : "Overpass sem resposta");
   } finally {
     clearTimeout(timer);
     ctrl.abort(); // cancela as consultas que ainda estão em andamento

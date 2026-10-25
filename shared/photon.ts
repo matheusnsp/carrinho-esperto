@@ -42,18 +42,26 @@ export function parseFeatures(features: any[], lat: number, lon: number, radius:
   return [...seen.values()].sort((a, b) => a.distanceM - b.distanceM);
 }
 
-export async function queryPhoton(lat: number, lon: number, radius: number, timeoutMs = 12_000): Promise<NearbyStore[]> {
+export async function queryPhoton(
+  lat: number,
+  lon: number,
+  radius: number,
+  { timeoutMs = 12_000, headers = {} as Record<string, string> } = {},
+): Promise<NearbyStore[]> {
   const box = bbox(lat, lon, radius);
   const signal = AbortSignal.timeout(timeoutMs);
   const responses = await Promise.allSettled(
     photonTerms().map(async (term) => {
       const params = new URLSearchParams({ q: term, lat: String(lat), lon: String(lon), bbox: box, limit: "50", osm_tag: "shop" });
-      const resp = await fetch(`${PHOTON_URL}?${params}`, { signal });
+      const resp = await fetch(`${PHOTON_URL}?${params}`, { signal, headers });
       if (!resp.ok) throw new Error(`Photon HTTP ${resp.status}`);
       return ((await resp.json()).features ?? []) as any[];
     }),
   );
   const ok = responses.filter((r) => r.status === "fulfilled");
-  if (!ok.length) throw new Error("Não foi possível buscar os mercados próximos. Tente de novo em instantes.");
+  if (!ok.length) {
+    const reason = responses.find((r) => r.status === "rejected")?.reason;
+    throw new Error(`Photon: ${reason instanceof Error ? reason.message : "sem resposta"}`);
+  }
   return parseFeatures(ok.flatMap((r) => r.value), lat, lon, radius);
 }

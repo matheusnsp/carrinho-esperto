@@ -1,3 +1,4 @@
+import { hideBroken } from "../hideBroken";
 import type { Offer } from "../../shared/types";
 import { chainById } from "../../shared/chains";
 import { brl } from "../../shared/compare";
@@ -16,7 +17,7 @@ export function OfferCard({ offer, best, distanceM }: Props) {
   return (
     <a className={`card ${best ? "is-best" : ""}`} href={offer.url} target="_blank" rel="noreferrer">
       <div className="card-media">
-        {offer.image ? <img src={offer.image} alt="" loading="lazy" /> : <span className="no-img">sem foto</span>}
+        {offer.image ? <img src={offer.image} alt="" loading="lazy" onError={hideBroken} /> : <span className="no-img">sem foto</span>}
         {discount > 0 && <span className="tag-discount">-{discount}%</span>}
         {best && <span className="tag-best">Mais barato</span>}
       </div>

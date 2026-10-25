@@ -3,7 +3,8 @@ import { normalizeText } from "./geo.js";
 
 /**
  * Redes de supermercado com loja online. A maioria usa a plataforma VTEX;
- * Pão de Açúcar e Extra usam a API própria do GPA (veja server/gpa.ts).
+ * Pão de Açúcar e Extra usam a API própria do GPA (veja server/gpa.ts) e o Guanabara,
+ * que não vende online, publica uma lista de preços no site (veja server/guanabara.ts).
  * Para adicionar uma rede, confira se esta URL responde com JSON:
  *   https://<dominio>/api/io/_v/api/intelligent-search/product_search/?query=arroz
  */
@@ -38,13 +39,14 @@ export const CHAINS: Chain[] = [
     color: "#d52b1e",
     osmMatch: ["extra"],
   },
-  { id: "samsclub", name: "Sam's Club", domain: "www.samsclub.com.br", color: "#0067a0", osmMatch: ["sam's club", "sams club"] },
-  { id: "mambo", name: "Mambo", domain: "www.mambo.com.br", color: "#c8102e", osmMatch: ["mambo"] },
-  { id: "covabra", name: "Covabra", domain: "www.covabra.com.br", color: "#00843d", osmMatch: ["covabra"] },
-  { id: "savegnago", name: "Savegnago", domain: "www.savegnago.com.br", color: "#e2001a", osmMatch: ["savegnago"] },
-  { id: "supernosso", name: "Super Nosso", domain: "www.supernosso.com", color: "#ffb400", osmMatch: ["super nosso", "supernosso"] },
-  { id: "bistek", name: "Bistek", domain: "www.bistek.com.br", color: "#d71920", osmMatch: ["bistek"] },
-  { id: "giassi", name: "Giassi", domain: "www.giassi.com.br", color: "#005baa", osmMatch: ["giassi"] },
+  {
+    id: "guanabara",
+    name: "Guanabara",
+    domain: "www.supermercadosguanabara.com.br",
+    platform: "guanabara",
+    color: "#c58a00",
+    osmMatch: ["guanabara"],
+  },
 ];
 
 export const chainById = (id: string) => CHAINS.find((c) => c.id === id);

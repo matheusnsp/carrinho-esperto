@@ -61,7 +61,7 @@ export function Coverage({ chainIds, results, searching, hidden, onToggle, neare
                 onClick={() => onToggle(id)}
                 disabled={!r || failed || empty}
                 aria-pressed={r ? !off : undefined}
-                title={failed ? r?.error : undefined}
+                title={failed ? r?.error : r?.note}
               >
                 <span className="cov-avatar">{chain?.name.charAt(0)}</span>
                 <span className="cov-text">
@@ -69,8 +69,8 @@ export function Coverage({ chainIds, results, searching, hidden, onToggle, neare
                   <span className="cov-status">
                     {status}
                     {r && dist !== undefined && !failed && ` · ${formatDistance(dist)}`}
-                    {r?.store && !failed && ` · loja ${r.store}`}
                   </span>
+                  <span className="cov-note">{r?.note && !failed ? r.note : "\u00a0"}</span>
                 </span>
                 {r && !failed && !empty && <span className="cov-check">{off ? "" : "✓"}</span>}
               </button>

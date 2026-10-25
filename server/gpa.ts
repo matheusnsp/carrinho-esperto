@@ -2,7 +2,11 @@ import type { Chain, ChainResult, Offer } from "../shared/types.js";
 import { parseQuantity, unitPrice } from "../shared/quantity.js";
 
 const API = "https://api.vendas.gpa.digital";
-const IMAGE_HOST = "https://static.paodeacucar.com";
+/** Cada bandeira serve as fotos num domínio próprio. */
+const IMAGE_HOST: Record<string, string> = {
+  pa: "https://static.paodeacucar.com",
+  ex: "https://static.extramercado.com.br",
+};
 /** CEP usado quando não sabemos onde a pessoa está (Centro do Rio). */
 export const DEFAULT_CEP = "20040020";
 const TIMEOUT_MS = 10_000;
@@ -48,7 +52,7 @@ export function toGpaOffer(chain: Chain, p: any): Offer | null {
     price: p.price,
     listPrice: p.price,
     available: Boolean(p.stock),
-    image: image ? (image.startsWith("http") ? image : `${IMAGE_HOST}${image}`) : null,
+    image: image ? (image.startsWith("http") ? image : `${IMAGE_HOST[chain.gpaBrand ?? "pa"]}${image}`) : null,
     url: p.urlDetails ?? `https://${chain.domain}/produto/${p.id}`,
     quantity,
     unitPrice: unitPrice(p.price, quantity),
@@ -81,7 +85,7 @@ export async function searchGpa(chain: Chain, query: string, cep: string | null,
     const offers = (data.products ?? [])
       .map((p: any) => toGpaOffer(chain, p))
       .filter((o: Offer | null): o is Offer => o !== null && o.available);
-    return { chainId: chain.id, ok: true, store: store.name, offers };
+    return { chainId: chain.id, ok: true, note: `loja ${store.name}`, offers };
   } catch (err) {
     return { chainId: chain.id, ok: false, error: err instanceof Error ? err.message : String(err), offers: [] };
   }

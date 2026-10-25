@@ -1,3 +1,4 @@
+import { hideBroken } from "../hideBroken";
 import type { SameProductGroup } from "../../shared/compare";
 import { brl } from "../../shared/compare";
 import { chainById } from "../../shared/chains";
@@ -16,7 +17,7 @@ export function SameProduct({ groups }: { groups: SameProductGroup[] }) {
           return (
             <article key={g.ean} className="compare">
               <header>
-                <div className="compare-img">{g.image && <img src={g.image} alt="" loading="lazy" />}</div>
+                <div className="compare-img">{g.image && <img src={g.image} alt="" loading="lazy" onError={hideBroken} />}</div>
                 <h3>{g.name}</h3>
               </header>
               <ol>

@@ -8,10 +8,10 @@ describe("matchChain", () => {
     expect(matchChain({ name: "Supermercado Zona Sul" })?.id).toBe("zonasul");
     expect(matchChain({ brand: "Prezunic", name: "Prezunic Tijuca" })?.id).toBe("prezunic");
     expect(matchChain({ name: "Carrefour Express" })?.id).toBe("carrefour");
-    expect(matchChain({ name: "Sam's Club" })?.id).toBe("samsclub");
   });
   it("ignora mercados sem loja online conhecida", () => {
-    expect(matchChain({ name: "Supermercados Guanabara" })).toBeNull();
+    expect(matchChain({ name: "Supermercados Mundial" })).toBeNull();
+    expect(matchChain({ name: "Supermercados Guanabara" })?.id).toBe("guanabara");
     expect(matchChain({})).toBeNull();
   });
 });
@@ -67,7 +67,7 @@ describe("queryOverpass", () => {
     const realFetch = globalThis.fetch;
     globalThis.fetch = (async () => new Response("", { status: 429 })) as typeof fetch;
     try {
-      await expect(queryOverpass(0, 0, 1000, { timeoutMs: 1000 })).rejects.toThrow(/OpenStreetMap/);
+      await expect(queryOverpass(0, 0, 1000, { timeoutMs: 1000 })).rejects.toThrow(/Overpass HTTP 429/);
     } finally {
       globalThis.fetch = realFetch;
     }
@@ -130,7 +130,51 @@ describe("Pão de Açúcar e Extra", () => {
       name: "Arroz Agulhinha Tipo 1 CAMIL Pacote 5kg",
     });
     expect(o?.image).toBe("https://static.paodeacucar.com/img/uploads/1/224/33031224.jpg");
+    const ex = toGpaOffer(chainById("extra")!, { id: 1, stock: true, price: 4.99, productImages: ["/img/a.jpg"], name: "Leite 1L" });
+    expect(ex?.image).toBe("https://static.extramercado.com.br/img/a.jpg");
     expect(o?.unitPrice).toBeCloseTo(5.2);
     expect(o?.available).toBe(true);
+  });
+});
+
+describe("Guanabara", () => {
+  const html = `
+    <div class="col item"><div class="row">
+      <div class="col image" style="background-image: url('//www.supermercadosguanabara.com.br:443/sites/default/files/cafe.png');">
+        <div class="price"><div class="vertical-align"><span class="number">25,80</span> </div></div>
+      </div>
+      <div class="col text"><div class="vertical-align"><div class="name">Café 3 Corações 500g</div></div></div>
+    </div></div>
+    <div class="col item"><div class="row">
+      <div class="col image" style="background-image: url('//x/aveia.png');">
+        <div class="price"><div class="vertical-align"><span class="number">3,69</span> <span class="unity">cada</span></div></div>
+      </div>
+      <div class="col text"><div class="vertical-align"><div class="name">Aveia em Flocos Quaker 165g</div></div></div>
+    </div></div>
+    <div class="col item"><a href="/produtos/42"><div class="name">Açougue</div></a></div>
+    Validade: 26/10/2026`;
+
+  it("lê produtos, preços e validade da página", async () => {
+    const { parseCategory } = await import("../server/guanabara");
+    const { items, validUntil } = parseCategory(html, 12);
+    expect(items).toHaveLength(2);
+    expect(items[0]).toMatchObject({ name: "Café 3 Corações 500g", price: 25.8, category: 12 });
+    expect(items[0].image).toBe("https://www.supermercadosguanabara.com.br/sites/default/files/cafe.png");
+    expect(validUntil).toBe("26/10");
+  });
+
+  it("busca exige o produto e prioriza quem casa com mais palavras", async () => {
+    const { searchItems } = await import("../server/guanabara");
+    const item = (name: string) => ({ name, price: 1, image: null, category: 1 });
+    const items = [item("Café 3 Corações 500g"), item("Café Pilão 250g"), item("Leite UHT Glória Integral TP Litro"), item("Leite em Pó Glória 360g")];
+    expect(searchItems(items, "café 500g").map((i) => i.name)).toEqual(["Café 3 Corações 500g"]);
+    expect(searchItems(items, "leite integral").map((i) => i.name)).toEqual(["Leite UHT Glória Integral TP Litro"]);
+    expect(searchItems(items, "arroz")).toEqual([]);
+  });
+
+  it("produto vendido por kg tem preço por quilo", async () => {
+    const { parseQuantity } = await import("../shared/quantity");
+    expect(parseQuantity("Picanha Bovina kg")).toEqual({ amount: 1, unit: "kg" });
+    expect(parseQuantity("Leite UHT Longa Vida Italac Integral TP Litro")).toEqual({ amount: 1, unit: "l" });
   });
 });

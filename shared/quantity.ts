@@ -29,6 +29,10 @@ export function parseQuantity(name: string): Quantity | null {
     const q = toBase(num(m[1]), m[2]);
     if (q && q.amount > 0) last = q;
   }
+  // "Picanha kg", "Açúcar Guarani kg": preço por quilo.
+  if (!last && /(^|\s)kg$/i.test(name.trim())) return { amount: 1, unit: "kg" };
+  // "Leite UHT ... TP Litro": um litro.
+  if (!last && /(^|\s)litro(\s|$)/i.test(name)) return { amount: 1, unit: "l" };
   return last;
 }
 
