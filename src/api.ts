@@ -1,4 +1,5 @@
 import type { NearbyStore, SearchResponse } from "../shared/types";
+import { queryOverpass } from "../shared/overpass";
 
 async function getJson<T>(url: string): Promise<T> {
   const resp = await fetch(url);
@@ -13,6 +14,11 @@ export function searchProducts(query: string, chainIds: string[]): Promise<Searc
   return getJson(`/api/search?${params}`);
 }
 
-export function fetchNearby(lat: number, lon: number, radius: number): Promise<NearbyStore[]> {
-  return getJson(`/api/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
+/** Busca mercados direto do navegador; se não der, pede ao nosso servidor. */
+export async function fetchNearby(lat: number, lon: number, radius: number): Promise<NearbyStore[]> {
+  try {
+    return await queryOverpass(lat, lon, radius, { timeoutMs: 12_000 });
+  } catch {
+    return getJson(`/api/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
+  }
 }

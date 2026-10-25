@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { matchChain } from "../shared/chains";
 import { distanceMeters } from "../shared/geo";
-import { parseElements } from "../server/nearby";
+import { parseElements } from "../shared/overpass";
 
 describe("matchChain", () => {
   it("reconhece redes pelo nome ou marca", () => {
@@ -37,5 +37,39 @@ describe("parseElements", () => {
     );
     expect(stores.map((s) => s.chainId)).toEqual(["zonasul", "prezunic"]);
     expect(stores[0].distanceM).toBeLessThan(50);
+  });
+});
+
+describe("queryOverpass", () => {
+  it("usa o primeiro servidor que responder, mesmo se outros falharem", async () => {
+    const { queryOverpass } = await import("../shared/overpass");
+    const realFetch = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = (async (url: string) => {
+      calls++;
+      if (url.includes("overpass-api.de")) return new Response("busy", { status: 504 });
+      if (url.includes("kumi")) {
+        return Response.json({ elements: [{ type: "node", id: 9, lat: -22.97, lon: -43.18, tags: { name: "Prezunic" } }] });
+      }
+      return new Promise(() => {}); // servidor travado
+    }) as typeof fetch;
+    try {
+      const stores = await queryOverpass(-22.97, -43.18, 1000, { timeoutMs: 2000 });
+      expect(stores[0].chainId).toBe("prezunic");
+      expect(calls).toBe(4);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
+  });
+
+  it("dá um erro claro quando nenhum servidor responde", async () => {
+    const { queryOverpass } = await import("../shared/overpass");
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => new Response("", { status: 429 })) as typeof fetch;
+    try {
+      await expect(queryOverpass(0, 0, 1000, { timeoutMs: 1000 })).rejects.toThrow(/OpenStreetMap/);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 });
