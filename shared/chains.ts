@@ -1,5 +1,5 @@
-import type { Chain } from "./types";
-import { normalizeText } from "./geo";
+import type { Chain } from "./types.js";
+import { normalizeText } from "./geo.js";
 
 /**
  * Redes de supermercado com loja online na plataforma VTEX.

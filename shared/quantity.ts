@@ -1,4 +1,4 @@
-import type { Quantity } from "./types";
+import type { Quantity } from "./types.js";
 
 const UNIT_RE =
   /(\d+(?:[.,]\d+)?)\s*(kg|quilos?|g|gr|gramas?|mg|l|lt|litros?|ml)\b/gi;

@@ -1,5 +1,5 @@
-import type { Chain, ChainResult, Offer } from "../shared/types";
-import { parseQuantity, unitPrice } from "../shared/quantity";
+import type { Chain, ChainResult, Offer } from "../shared/types.js";
+import { parseQuantity, unitPrice } from "../shared/quantity.js";
 
 const TIMEOUT_MS = 10_000;
 

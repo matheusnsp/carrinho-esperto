@@ -33,11 +33,20 @@ npm run build
 npm start         # serve a API e o site em http://localhost:3001
 ```
 
+## Publicando na Vercel
+
+1. Entre em [vercel.com](https://vercel.com) com sua conta do GitHub.
+2. **Add New → Project**, escolha o repositório `carrinho-esperto` e clique em **Deploy** (as configurações já estão em `vercel.json`).
+3. Cada `git push` na `main` publica uma nova versão automaticamente.
+
+O site vai para a CDN da Vercel e a pasta `api/` vira funções serverless (`/api/search`, `/api/nearby`, `/api/chains`). As buscas ficam em cache por 10 minutos.
+
 ## Estrutura
 
 ```
 shared/   código usado pelo site e pelo servidor (tipos, redes, quantidade, comparação)
-server/   API Express: /api/search, /api/nearby, /api/chains
+server/   lógica da API (handlers.ts) + servidor Express para rodar localmente
+api/      funções da Vercel (usam os mesmos handlers)
 src/      site React (Vite + Leaflet)
 tests/    testes
 ```

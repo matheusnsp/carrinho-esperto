@@ -1,4 +1,4 @@
-import type { ChainResult, Offer } from "./types";
+import type { ChainResult, Offer } from "./types.js";
 
 export interface SameProductGroup {
   ean: string;

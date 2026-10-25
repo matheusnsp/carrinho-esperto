@@ -1,6 +1,6 @@
-import type { NearbyStore } from "../shared/types";
-import { matchChain } from "../shared/chains";
-import { distanceMeters } from "../shared/geo";
+import type { NearbyStore } from "../shared/types.js";
+import { matchChain } from "../shared/chains.js";
+import { distanceMeters } from "../shared/geo.js";
 
 const OVERPASS_URLS = [
   "https://overpass-api.de/api/interpreter",
