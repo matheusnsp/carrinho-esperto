@@ -11,6 +11,8 @@ Compare o preço de um produto nos supermercados perto de você.
 3. **Preços**: cada rede reconhecida que tem loja online na plataforma **VTEX** (Zona Sul, Prezunic, Hortifruti, Carrefour) é consultada pela API pública de busca:
    `https://<loja>/api/io/_v/api/intelligent-search/product_search/?query=arroz`
    **Guanabara** não vende online: o app lê a lista de preços que eles publicam no site (com validade) e busca nela.
+   **Mundial** também não vende online: o app lê as ofertas da semana da API do site (só o que está em oferta, não o catálogo todo).
+   **Supermarket** é uma rede de lojas independentes sem catálogo online: só entram os destaques da página de ofertas da rede.
    **Pão de Açúcar e Extra** usam a API do GPA (`api.vendas.gpa.digital`). O preço muda por loja, então o app usa o CEP da sua localização para escolher a loja que atende você.
 4. **Comparação**:
    - ofertas ordenadas por menor preço ou por **preço por kg/litro** (a quantidade é lida do nome: "5kg", "500g", "6x170g", "2L"…);
@@ -78,5 +80,6 @@ Edite `shared/chains.ts`. A rede precisa ter loja online VTEX. Para conferir, ab
 
 - Preço regionalizado: algumas redes mudam o preço por CEP (VTEX `regionId`), o que permite mostrar o preço da loja mais próxima.
 - Lista de compras: somar o carrinho inteiro em cada mercado e dizer onde sai mais barato.
-- Outras redes do Rio (Mundial, Assaí, Atacadão…).
+- Outras redes do Rio (Assaí, Atacadão…).
+- Guia completo do Supermarket (hoje é um PDF em imagem; precisaria de OCR).
 - Cache das buscas no servidor.

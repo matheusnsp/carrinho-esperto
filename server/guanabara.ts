@@ -1,6 +1,7 @@
 import type { Chain, ChainResult, Offer } from "../shared/types.js";
 import { parseQuantity, unitPrice } from "../shared/quantity.js";
 import { normalizeText } from "../shared/geo.js";
+import { searchByWords } from "../shared/textSearch.js";
 
 /**
  * O Guanabara não vende online, mas publica a lista de preços de cada categoria no site
@@ -80,29 +81,8 @@ async function loadCatalog(): Promise<Catalog> {
   return loading;
 }
 
-const STOPWORDS = new Set(["de", "da", "do", "das", "dos", "e", "com", "em", "tipo"]);
-const tokens = (s: string) => normalizeText(s).split(/[^a-z0-9,]+/).filter((t) => t && !STOPWORDS.has(t));
-
-/**
- * Busca simples por palavras: a primeira palavra (o produto em si) é obrigatória
- * e ficam os itens que casam com mais palavras da busca.
- */
-export function searchItems(items: GuanabaraItem[], query: string, count = 12): GuanabaraItem[] {
-  const q = tokens(query);
-  if (!q.length) return [];
-  const scored = items
-    .map((item) => {
-      const words = tokens(item.name);
-      const has = (t: string) => words.some((w) => w === t || (t.length >= 4 && w.startsWith(t)));
-      return { item, first: has(q[0]), score: q.filter(has).length };
-    })
-    .filter((s) => s.first);
-  const best = Math.max(0, ...scored.map((s) => s.score));
-  return scored
-    .filter((s) => s.score === best)
-    .map((s) => s.item)
-    .slice(0, count);
-}
+/** Busca nos itens da lista; veja searchByWords. */
+export const searchItems = (items: GuanabaraItem[], query: string, count = 12) => searchByWords(items, query, count);
 
 export function toGuanabaraOffer(chain: Chain, item: GuanabaraItem): Offer {
   const quantity = parseQuantity(item.name);

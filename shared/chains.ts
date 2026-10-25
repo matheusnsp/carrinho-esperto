@@ -3,8 +3,8 @@ import { normalizeText } from "./geo.js";
 
 /**
  * Redes de supermercado com loja online. A maioria usa a plataforma VTEX;
- * Pão de Açúcar e Extra usam a API própria do GPA (veja server/gpa.ts) e o Guanabara,
- * que não vende online, publica uma lista de preços no site (veja server/guanabara.ts).
+ * Pão de Açúcar e Extra usam a API própria do GPA (veja server/gpa.ts). Guanabara, Mundial e
+ * Supermarket não vendem online: lemos as ofertas que publicam (server/guanabara.ts, mundial.ts, supermarket.ts).
  * Para adicionar uma rede, confira se esta URL responde com JSON:
  *   https://<dominio>/api/io/_v/api/intelligent-search/product_search/?query=arroz
  */
@@ -46,6 +46,22 @@ export const CHAINS: Chain[] = [
     platform: "guanabara",
     color: "#c58a00",
     osmMatch: ["guanabara"],
+  },
+  {
+    id: "mundial",
+    name: "Mundial",
+    domain: "www.supermercadosmundial.com.br",
+    platform: "mundial",
+    color: "#1d4f9c",
+    osmMatch: ["mundial"],
+  },
+  {
+    id: "supermarket",
+    name: "Supermarket",
+    domain: "www.redesupermarket.com.br",
+    platform: "supermarket",
+    color: "#e2001a",
+    osmMatch: ["supermarket"],
   },
 ];
 

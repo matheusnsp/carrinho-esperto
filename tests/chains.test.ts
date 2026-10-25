@@ -9,7 +9,8 @@ describe("matchChain", () => {
     expect(matchChain({ name: "Carrefour Express" })?.id).toBe("carrefour");
   });
   it("ignora mercados sem loja online conhecida", () => {
-    expect(matchChain({ name: "Supermercados Mundial" })).toBeNull();
+    expect(matchChain({ name: "Supermercados Princesa" })).toBeNull();
+    expect(matchChain({ name: "Supermercados Mundial" })?.id).toBe("mundial");
     expect(matchChain({ name: "Supermercados Guanabara" })?.id).toBe("guanabara");
     expect(matchChain({})).toBeNull();
   });
@@ -113,11 +114,14 @@ describe("Guanabara", () => {
     expect(validUntil).toBe("26/10");
   });
 
-  it("busca exige o produto e prioriza quem casa com mais palavras", async () => {
+  it("busca exige todas as palavras e usa a medida só para ordenar", async () => {
     const { searchItems } = await import("../server/guanabara");
     const item = (name: string) => ({ name, price: 1, image: null, category: 1 });
     const items = [item("Café 3 Corações 500g"), item("Café Pilão 250g"), item("Leite UHT Glória Integral TP Litro"), item("Leite em Pó Glória 360g")];
-    expect(searchItems(items, "café 500g").map((i) => i.name)).toEqual(["Café 3 Corações 500g"]);
+    expect(searchItems(items, "café 500g").map((i) => i.name)).toEqual(["Café 3 Corações 500g", "Café Pilão 250g"]);
+    expect(searchItems([item("Óleo de Coco 500ml"), item("Óleo de Soja Soya 900ml")], "óleo de soja").map((i) => i.name)).toEqual([
+      "Óleo de Soja Soya 900ml",
+    ]);
     expect(searchItems(items, "leite integral").map((i) => i.name)).toEqual(["Leite UHT Glória Integral TP Litro"]);
     expect(searchItems(items, "arroz")).toEqual([]);
   });

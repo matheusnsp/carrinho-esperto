@@ -22,6 +22,8 @@ const RULES: Record<string, { types: string[]; names?: RegExp }> = {
   paodeacucar: { types: ["supermarket", "convenience"], names: /pao de acucar/ },
   extra: { types: ["supermarket", "convenience"], names: /^((mercado|supermercado|minimercado) )?extra( (mercado|supermercado|hiper))?\b/ },
   guanabara: { types: ["supermarket"], names: /^(supermercados? )?guanabara\b/ },
+  mundial: { types: ["supermarket"], names: /^(supermercados? )?mundial\b/ },
+  supermarket: { types: ["supermarket"], names: /^(rede )?supermarket\b/ },
 };
 
 const OUT = new URL("../shared/stores-rj.json", import.meta.url);
