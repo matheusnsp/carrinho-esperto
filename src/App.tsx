@@ -79,7 +79,7 @@ export default function App() {
     <div className="app">
       <header>
         <h1>
-          🛒 Merca<span>Bom</span>
+          🛒 Carrinho <span>Esperto</span>
         </h1>
         <p>Encontre o mercado mais barato perto de você.</p>
       </header>

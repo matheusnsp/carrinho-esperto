@@ -1,8 +1,8 @@
-# 🛒 MercaBom
+# 🛒 Carrinho Esperto
 
 Compare o preço de um produto nos supermercados perto de você.
 
-![MercaBom](docs/screenshot.png)
+![Carrinho Esperto](docs/screenshot.png)
 
 ## Como funciona
 

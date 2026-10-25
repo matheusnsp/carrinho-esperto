@@ -48,5 +48,5 @@ if (process.env.NODE_ENV === "production") {
 }
 
 app.listen(PORT, () => {
-  console.log(`MercaBom API em http://localhost:${PORT}`);
+  console.log(`Carrinho Esperto API em http://localhost:${PORT}`);
 });

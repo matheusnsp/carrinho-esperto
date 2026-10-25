@@ -60,7 +60,7 @@ export async function findNearby(lat: number, lon: number, radius: number): Prom
       const resp = await fetch(url, {
         method: "POST",
         body,
-        headers: { "User-Agent": "MercaBom/0.1 (comparador de precos)" },
+        headers: { "User-Agent": "CarrinhoEsperto/0.1 (comparador de precos)" },
         signal: AbortSignal.timeout(25_000),
       });
       if (!resp.ok) throw new Error(`Overpass HTTP ${resp.status}`);

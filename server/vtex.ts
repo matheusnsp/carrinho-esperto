@@ -34,7 +34,7 @@ export async function searchChain(chain: Chain, query: string, count = 12): Prom
     `?query=${encodeURIComponent(query)}&count=${count}&page=1&locale=pt-BR&hideUnavailableItems=true`;
   try {
     const resp = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (MercaBom)", Accept: "application/json" },
+      headers: { "User-Agent": "Mozilla/5.0 (CarrinhoEsperto)", Accept: "application/json" },
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
