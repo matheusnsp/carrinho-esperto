@@ -108,3 +108,29 @@ describe("Carrefour", () => {
     expect(o?.url).toBe("https://mercado.carrefour.com.br/arroz-camil-5kg/p");
   });
 });
+
+describe("Pão de Açúcar e Extra", () => {
+  it("reconhece as lojas no mapa sem confundir com outras marcas", () => {
+    expect(matchChain({ name: "Supermercado Pão de Açúcar" })?.id).toBe("paodeacucar");
+    expect(matchChain({ name: "Extra Supermercado" })?.id).toBe("extra");
+    expect(matchChain({ name: "Mercado Extra" })?.id).toBe("extra");
+    expect(matchChain({ name: "Extrafarma" })).toBeNull();
+  });
+
+  it("converte o produto do GPA em oferta", async () => {
+    const { toGpaOffer } = await import("../server/gpa");
+    const { chainById } = await import("../shared/chains");
+    const o = toGpaOffer(chainById("paodeacucar")!, {
+      id: 41329,
+      stock: true,
+      price: 25.99,
+      brand: "CAMIL",
+      productImages: ["/img/uploads/1/224/33031224.jpg"],
+      urlDetails: "https://www.paodeacucar.com/produto/41329/arroz-camil-5kg",
+      name: "Arroz Agulhinha Tipo 1 CAMIL Pacote 5kg",
+    });
+    expect(o?.image).toBe("https://static.paodeacucar.com/img/uploads/1/224/33031224.jpg");
+    expect(o?.unitPrice).toBeCloseTo(5.2);
+    expect(o?.available).toBe(true);
+  });
+});

@@ -43,7 +43,9 @@ export function Coverage({ chainIds, results, searching, hidden, onToggle, neare
           const status = searching
             ? "consultando…"
             : failed
-              ? "não respondeu"
+              ? r?.error === "Não entrega nesse CEP"
+                ? "não entrega aqui"
+                : "não respondeu"
               : empty
                 ? "sem resultados"
                 : r
@@ -67,6 +69,7 @@ export function Coverage({ chainIds, results, searching, hidden, onToggle, neare
                   <span className="cov-status">
                     {status}
                     {r && dist !== undefined && !failed && ` · ${formatDistance(dist)}`}
+                    {r?.store && !failed && ` · loja ${r.store}`}
                   </span>
                 </span>
                 {r && !failed && !empty && <span className="cov-check">{off ? "" : "✓"}</span>}

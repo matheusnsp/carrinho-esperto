@@ -65,7 +65,7 @@ export default function App() {
     setSearching(true);
     setSearchError(null);
     try {
-      setResult(await searchProducts(q.trim(), chainIds));
+      setResult(await searchProducts(q.trim(), chainIds, geo.cep));
     } catch (e) {
       setSearchError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -73,8 +73,9 @@ export default function App() {
     }
   }
 
-  // Refaz a busca quando muda o conjunto de redes (localização, raio ou filtro "perto de mim").
-  const chainsKey = searchedChainIds.join(",");
+  // Refaz a busca quando muda o conjunto de redes (localização, raio ou filtro "perto de mim") ou o CEP.
+  // O CEP muda a loja usada pelo Pão de Açúcar e pelo Extra.
+  const chainsKey = `${searchedChainIds.join(",")}|${geo.cep ?? ""}`;
   useEffect(() => {
     if (result) runSearch(result.query);
     // eslint-disable-next-line react-hooks/exhaustive-deps

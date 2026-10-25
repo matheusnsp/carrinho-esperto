@@ -1,6 +1,7 @@
 import { CHAINS, chainById } from "../shared/chains.js";
 import type { SearchResponse } from "../shared/types.js";
 import { searchChain } from "./vtex.js";
+import { searchGpa } from "./gpa.js";
 
 export interface ApiResult {
   status: number;
@@ -25,6 +26,10 @@ export async function search(q: Query): Promise<ApiResult> {
 
   const ids = param(q, "chains").split(",").filter(Boolean);
   const selected = ids.length ? ids.map(chainById).filter((c) => c !== undefined) : CHAINS;
-  const results = await Promise.all(selected.map((c) => searchChain(c, query)));
+  const cep = param(q, "cep").replace(/\D/g, "");
+  const validCep = cep.length === 8 ? cep : null;
+  const results = await Promise.all(
+    selected.map((c) => (c.platform === "gpa" ? searchGpa(c, query, validCep) : searchChain(c, query))),
+  );
   return { status: 200, body: { query, results } satisfies SearchResponse, cacheSeconds: 600 };
 }

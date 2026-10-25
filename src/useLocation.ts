@@ -6,23 +6,25 @@ export interface LatLon {
   lon: number;
 }
 
-/** Nome do bairro para mostrar ao usuário ("Copacabana, Rio de Janeiro"). */
-async function placeName({ lat, lon }: LatLon, signal: AbortSignal): Promise<string | null> {
+/** Bairro ("Copacabana, Rio de Janeiro") e CEP da posição. */
+async function placeName({ lat, lon }: LatLon, signal: AbortSignal): Promise<{ label: string | null; cep: string | null }> {
   const resp = await fetch(
     `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=14&accept-language=pt-BR`,
     { signal },
   );
-  if (!resp.ok) return null;
+  if (!resp.ok) return { label: null, cep: null };
   const a = (await resp.json()).address ?? {};
   const bairro = a.suburb ?? a.neighbourhood ?? a.city_district ?? a.quarter;
   const cidade = a.city ?? a.town ?? a.municipality;
-  return [bairro, cidade].filter(Boolean).join(", ") || null;
+  const cep = String(a.postcode ?? "").replace(/\D/g, "");
+  return { label: [bairro, cidade].filter(Boolean).join(", ") || null, cep: cep.length === 8 ? cep : null };
 }
 
 export function useGeolocation() {
   // Lembra a última posição para não pedir de novo a cada visita.
   const [position, setPosition] = usePersistentState<LatLon | null>("ce:local", null);
   const [label, setLabel] = useState<string | null>(null);
+  const [cep, setCep] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -30,8 +32,12 @@ export function useGeolocation() {
     if (!position) return;
     const ctrl = new AbortController();
     setLabel(null);
+    setCep(null);
     placeName(position, ctrl.signal)
-      .then(setLabel)
+      .then((p) => {
+        setLabel(p.label);
+        setCep(p.cep);
+      })
       .catch(() => {});
     return () => ctrl.abort();
   }, [position]);
@@ -61,5 +67,5 @@ export function useGeolocation() {
     );
   }, []);
 
-  return { position, setPosition, label, locate, status, error };
+  return { position, setPosition, label, cep, locate, status, error };
 }

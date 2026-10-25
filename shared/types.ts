@@ -5,6 +5,10 @@ export interface Chain {
   domain: string;
   /** Domínio para a API, quando o site bloqueia consultas automáticas. */
   apiDomain?: string;
+  /** Plataforma da loja online. VTEX é o padrão; "gpa" = Pão de Açúcar e Extra. */
+  platform?: "vtex" | "gpa";
+  /** Código da bandeira na API do GPA. */
+  gpaBrand?: "pa" | "ex";
   /** Cor usada no mapa e nos selos. */
   color: string;
   /** Termos que identificam a rede nos dados do OpenStreetMap (sem acento, minúsculo). */
@@ -36,6 +40,8 @@ export interface ChainResult {
   chainId: string;
   ok: boolean;
   error?: string;
+  /** Loja usada para os preços, quando a rede tem preço por região. */
+  store?: string;
   offers: Offer[];
 }
 

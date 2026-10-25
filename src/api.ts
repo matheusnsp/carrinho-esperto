@@ -9,8 +9,9 @@ async function getJson<T>(url: string): Promise<T> {
   return data as T;
 }
 
-export function searchProducts(query: string, chainIds: string[]): Promise<SearchResponse> {
+export function searchProducts(query: string, chainIds: string[], cep: string | null): Promise<SearchResponse> {
   const params = new URLSearchParams({ q: query });
+  if (cep) params.set("cep", cep);
   if (chainIds.length) params.set("chains", chainIds.join(","));
   return getJson(`/api/search?${params}`);
 }

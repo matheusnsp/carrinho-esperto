@@ -2,7 +2,8 @@ import type { Chain } from "./types.js";
 import { normalizeText } from "./geo.js";
 
 /**
- * Redes de supermercado com loja online na plataforma VTEX.
+ * Redes de supermercado com loja online. A maioria usa a plataforma VTEX;
+ * Pão de Açúcar e Extra usam a API própria do GPA (veja server/gpa.ts).
  * Para adicionar uma rede, confira se esta URL responde com JSON:
  *   https://<dominio>/api/io/_v/api/intelligent-search/product_search/?query=arroz
  */
@@ -19,6 +20,24 @@ export const CHAINS: Chain[] = [
     color: "#1e5bc6",
     osmMatch: ["carrefour"],
   },
+  {
+    id: "paodeacucar",
+    name: "Pão de Açúcar",
+    domain: "www.paodeacucar.com",
+    platform: "gpa",
+    gpaBrand: "pa",
+    color: "#7a9a01",
+    osmMatch: ["pao de acucar"],
+  },
+  {
+    id: "extra",
+    name: "Extra",
+    domain: "www.extramercado.com.br",
+    platform: "gpa",
+    gpaBrand: "ex",
+    color: "#d52b1e",
+    osmMatch: ["extra"],
+  },
   { id: "samsclub", name: "Sam's Club", domain: "www.samsclub.com.br", color: "#0067a0", osmMatch: ["sam's club", "sams club"] },
   { id: "mambo", name: "Mambo", domain: "www.mambo.com.br", color: "#c8102e", osmMatch: ["mambo"] },
   { id: "covabra", name: "Covabra", domain: "www.covabra.com.br", color: "#00843d", osmMatch: ["covabra"] },
@@ -30,9 +49,13 @@ export const CHAINS: Chain[] = [
 
 export const chainById = (id: string) => CHAINS.find((c) => c.id === id);
 
+const wordRegex = (term: string) =>
+  new RegExp(`(^|[^a-z0-9])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^a-z0-9])`);
+
 /** Descobre a rede de um supermercado a partir das tags do OpenStreetMap. */
 export function matchChain(tags: Record<string, string | undefined>): Chain | null {
   const haystack = normalizeText([tags.brand, tags.name, tags.operator].filter(Boolean).join(" | "));
   if (!haystack) return null;
-  return CHAINS.find((c) => c.osmMatch.some((m) => haystack.includes(m))) ?? null;
+  // Palavra inteira: "extra" não pode casar com "Extrafarma".
+  return CHAINS.find((c) => c.osmMatch.some((m) => wordRegex(m).test(haystack))) ?? null;
 }
