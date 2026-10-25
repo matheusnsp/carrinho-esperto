@@ -1,16 +1,21 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NearbyStore, SearchResponse } from "../shared/types";
 import { CHAINS } from "../shared/chains";
 import { SortMode, flattenOffers, groupByEan } from "../shared/compare";
+import { formatDistance } from "../shared/geo";
 import { fetchNearby, searchProducts } from "./api";
 import { useGeolocation } from "./useLocation";
 import { StoreMap } from "./components/StoreMap";
 import { NearbyList } from "./components/NearbyList";
-import { OfferCard } from "./components/OfferCard";
+import { OfferCard, OfferSkeleton } from "./components/OfferCard";
 import { SameProduct } from "./components/SameProduct";
+import { BestDeal } from "./components/BestDeal";
+import { Hero } from "./components/Hero";
+import { EmptyState } from "./components/EmptyState";
+import { Coverage } from "./components/Coverage";
+import { CartIcon, CrosshairIcon, PinIcon } from "./components/Icons";
 
 const RADII = [1000, 3000, 5000, 10000];
-const SUGGESTIONS = ["arroz 5kg", "feijão preto 1kg", "leite integral", "café 500g", "óleo de soja"];
 
 export default function App() {
   const geo = useGeolocation();
@@ -21,6 +26,7 @@ export default function App() {
 
   const [query, setQuery] = useState("");
   const [onlyNearby, setOnlyNearby] = useState(true);
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<SortMode>("price");
   const [result, setResult] = useState<SearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
@@ -49,13 +55,14 @@ export default function App() {
 
   const nearbyChainIds = [...nearestByChain.keys()];
   const useNearbyFilter = onlyNearby && nearbyChainIds.length > 0;
-  const chainIds = useNearbyFilter ? nearbyChainIds : [];
+  const searchedChainIds = useNearbyFilter ? nearbyChainIds : CHAINS.map((c) => c.id);
 
-  async function runSearch(q: string) {
+  async function runSearch(q: string, chainIds = searchedChainIds) {
     if (q.trim().length < 2) return;
     setQuery(q);
     setSearching(true);
     setSearchError(null);
+    setHidden(new Set());
     try {
       setResult(await searchProducts(q.trim(), chainIds));
     } catch (e) {
@@ -65,128 +72,169 @@ export default function App() {
     }
   }
 
-  function onSubmit(e: FormEvent) {
-    e.preventDefault();
-    runSearch(query);
-  }
+  // Refaz a busca quando muda o conjunto de redes (localização, raio ou filtro "perto de mim").
+  const chainsKey = searchedChainIds.join(",");
+  useEffect(() => {
+    if (result) runSearch(result.query);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chainsKey]);
 
-  const offers = useMemo(() => (result ? flattenOffers(result.results, sort) : []), [result, sort]);
-  const groups = useMemo(() => (result ? groupByEan(result.results) : []), [result]);
-  const failed = result?.results.filter((r) => !r.ok) ?? [];
-  const cheapest = offers.length ? Math.min(...offers.map((o) => o.price)) : null;
+  const visible = useMemo(
+    () => (result ? result.results.filter((r) => r.ok && !hidden.has(r.chainId)) : []),
+    [result, hidden],
+  );
+  const offers = useMemo(() => flattenOffers(visible, sort), [visible, sort]);
+  const groups = useMemo(() => groupByEan(visible), [visible]);
+  const cheapest = useMemo(
+    () => offers.reduce<(typeof offers)[number] | null>((b, o) => (!b || o.price < b.price ? o : b), null),
+    [offers],
+  );
+  const cheapestGroup = cheapest?.ean ? groups.find((g) => g.ean === cheapest.ean) : undefined;
+
+  function toggleChain(id: string) {
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   return (
     <div className="app">
-      <header>
-        <h1>
-          🛒 Carrinho <span>Esperto</span>
-        </h1>
-        <p>Encontre o mercado mais barato perto de você.</p>
-      </header>
+      <nav className="topbar">
+        <div className="brand">
+          <span className="logo">
+            <CartIcon size={20} />
+          </span>
+          Carrinho <b>Esperto</b>
+        </div>
+        <button className="loc-pill" onClick={geo.locate} disabled={geo.status === "loading"}>
+          <PinIcon size={16} />
+          <span>
+            {geo.status === "loading"
+              ? "Localizando…"
+              : geo.position
+                ? (geo.label ?? "Sua localização")
+                : "Definir localização"}
+          </span>
+        </button>
+      </nav>
 
-      <main>
-        <aside className="panel">
-          <h2>1. Onde você está?</h2>
-          <div className="controls">
-            <button onClick={geo.locate} disabled={geo.status === "loading"}>
-              {geo.status === "loading" ? "Localizando…" : "📍 Usar minha localização"}
-            </button>
-            <select value={radius} onChange={(e) => setRadius(Number(e.target.value))} aria-label="Raio">
-              {RADII.map((r) => (
-                <option key={r} value={r}>
-                  até {r / 1000} km
-                </option>
-              ))}
-            </select>
-          </div>
-          {geo.error && <p className="error small">{geo.error}</p>}
-          {!geo.position && !geo.error && <p className="muted small">Ou clique no mapa para marcar sua posição.</p>}
-          <StoreMap position={geo.position} radius={radius} stores={stores} onPick={geo.setPosition} />
-          {storesLoading && <p className="muted small">Procurando mercados…</p>}
-          {storesError && <p className="error small">Erro ao buscar mercados: {storesError}</p>}
-          {geo.position && !storesLoading && !storesError && <NearbyList stores={stores} />}
-        </aside>
+      <Hero query={query} setQuery={setQuery} onSearch={(q) => runSearch(q)} searching={searching} />
 
-        <section className="content">
-          <h2>2. O que você quer comprar?</h2>
-          <form onSubmit={onSubmit} className="search">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ex.: arroz 5kg, leite integral, café…"
-              autoFocus
-            />
-            <button type="submit" disabled={searching || query.trim().length < 2}>
-              {searching ? "Buscando…" : "Comparar"}
-            </button>
-          </form>
-          <div className="chips">
-            {SUGGESTIONS.map((s) => (
-              <button key={s} className="chip" onClick={() => runSearch(s)}>
-                {s}
-              </button>
-            ))}
-          </div>
+      <main className="layout">
+        <div className="results">
+          <Coverage
+            chainIds={searchedChainIds}
+            results={result?.results ?? null}
+            searching={searching}
+            hidden={hidden}
+            onToggle={toggleChain}
+            nearestByChain={nearestByChain}
+            nearbyOnly={useNearbyFilter}
+          />
 
-          <div className="options small">
-            <label>
+          <div className="toolbar">
+            <label className="switch">
               <input
                 type="checkbox"
                 checked={onlyNearby}
                 onChange={(e) => setOnlyNearby(e.target.checked)}
                 disabled={!nearbyChainIds.length}
-              />{" "}
+              />
+              <span className="track" />
               Só mercados perto de mim
-              {nearbyChainIds.length > 0 ? ` (${nearbyChainIds.length} redes)` : " — defina sua localização"}
             </label>
-            <label>
-              Ordenar por{" "}
-              <select value={sort} onChange={(e) => setSort(e.target.value as SortMode)}>
-                <option value="price">menor preço</option>
-                <option value="unitPrice">preço por kg / litro</option>
-                <option value="relevance">relevância</option>
+            {result && (
+              <select value={sort} onChange={(e) => setSort(e.target.value as SortMode)} aria-label="Ordenar">
+                <option value="price">Menor preço</option>
+                <option value="unitPrice">Preço por kg/litro</option>
+                <option value="relevance">Relevância</option>
               </select>
-            </label>
+            )}
           </div>
-          {!useNearbyFilter && (
-            <p className="muted small">Buscando em todas as redes: {CHAINS.map((c) => c.name).join(", ")}.</p>
+
+          {searchError && <div className="alert alert-error">{searchError}</div>}
+
+          {searching && (
+            <div className="grid">
+              {Array.from({ length: 8 }, (_, i) => (
+                <OfferSkeleton key={i} />
+              ))}
+            </div>
           )}
 
-          {searchError && <p className="error">{searchError}</p>}
-          {failed.length > 0 && (
-            <p className="warn small">
-              Não foi possível consultar: {failed.map((r) => CHAINS.find((c) => c.id === r.chainId)?.name).join(", ")}.
-            </p>
-          )}
+          {!searching && !result && <EmptyState />}
 
-          {result && !searching && (
+          {!searching && result && (
             <>
+              {cheapest && (
+                <BestDeal
+                  offer={cheapest}
+                  total={offers.length}
+                  storesCount={visible.filter((r) => r.offers.length).length}
+                  sameProductMax={cheapestGroup?.offers[cheapestGroup.offers.length - 1].price}
+                  distanceM={nearestByChain.get(cheapest.chainId)}
+                />
+              )}
               <SameProduct groups={groups} />
-              <section>
-                <h2>
-                  {offers.length} ofertas para “{result.query}”
-                </h2>
-                {offers.length === 0 && <p className="muted">Nada encontrado. Tente outro termo.</p>}
-                <div className="grid">
-                  {offers.map((o) => (
-                    <OfferCard
-                      key={`${o.chainId}-${o.productId}`}
-                      offer={o}
-                      best={sort === "price" && o.price === cheapest}
-                      distanceM={nearestByChain.get(o.chainId)}
-                    />
-                  ))}
+              <section className="block">
+                <div className="block-head">
+                  <h2>Todas as ofertas</h2>
+                  <p>
+                    {offers.length} resultados para “{result.query}”
+                  </p>
                 </div>
+                {offers.length === 0 ? (
+                  <p className="hint">Nada encontrado. Tente outro termo, como “arroz 5kg”.</p>
+                ) : (
+                  <div className="grid">
+                    {offers.map((o) => (
+                      <OfferCard
+                        key={`${o.chainId}-${o.productId}`}
+                        offer={o}
+                        best={o === cheapest}
+                        distanceM={nearestByChain.get(o.chainId)}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             </>
           )}
+        </div>
 
-          <p className="disclaimer small">
-            Preços das lojas online de cada rede. O valor na loja física pode ser diferente. Mapa ©
-            OpenStreetMap.
-          </p>
-        </section>
+        <aside className="side">
+          <div className="side-card">
+            <div className="side-head">
+              <div>
+                <h2>Mercados perto de você</h2>
+                <p>{geo.position ? `Num raio de ${formatDistance(radius)}` : "Toque no mapa ou use o GPS"}</p>
+              </div>
+              <button className="icon-btn" onClick={geo.locate} title="Usar minha localização">
+                <CrosshairIcon />
+              </button>
+            </div>
+            <div className="radius">
+              {RADII.map((r) => (
+                <button key={r} className={r === radius ? "on" : ""} onClick={() => setRadius(r)}>
+                  {r / 1000} km
+                </button>
+              ))}
+            </div>
+            <StoreMap position={geo.position} radius={radius} stores={stores} onPick={geo.setPosition} />
+            {geo.error && <div className="alert">{geo.error}</div>}
+            {storesLoading && <p className="hint">Procurando mercados…</p>}
+            {storesError && <div className="alert alert-error">Erro ao buscar mercados: {storesError}</div>}
+            {geo.position && !storesLoading && !storesError && <NearbyList stores={stores} />}
+          </div>
+        </aside>
       </main>
+
+      <footer className="foot">
+        Preços das lojas online de cada rede. O valor na loja física pode ser diferente. Mapa © OpenStreetMap.
+      </footer>
     </div>
   );
 }

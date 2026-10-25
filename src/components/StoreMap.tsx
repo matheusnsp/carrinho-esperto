@@ -7,11 +7,13 @@ import type { LatLon } from "../useLocation";
 
 const RIO: [number, number] = [-22.9068, -43.1729];
 
-function Recenter({ position }: { position: LatLon | null }) {
+function Recenter({ position, radius }: { position: LatLon | null; radius: number }) {
   const map = useMap();
   useEffect(() => {
-    if (position) map.setView([position.lat, position.lon], Math.max(map.getZoom(), 14));
-  }, [position, map]);
+    if (!position) return;
+    const zoom = radius <= 1000 ? 15 : radius <= 3000 ? 14 : radius <= 5000 ? 13 : 12;
+    map.setView([position.lat, position.lon], zoom);
+  }, [position, radius, map]);
   return null;
 }
 
@@ -29,17 +31,25 @@ interface Props {
 
 export function StoreMap({ position, radius, stores, onPick }: Props) {
   return (
-    <MapContainer center={RIO} zoom={12} className="map" scrollWheelZoom>
+    <MapContainer center={RIO} zoom={12} className="map" scrollWheelZoom={false}>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Recenter position={position} />
+      <Recenter position={position} radius={radius} />
       <ClickToSet onPick={onPick} />
       {position && (
         <>
-          <Circle center={[position.lat, position.lon]} radius={radius} pathOptions={{ color: "#2563eb", weight: 1, fillOpacity: 0.05 }} />
-          <CircleMarker center={[position.lat, position.lon]} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#2563eb", fillOpacity: 1 }}>
+          <Circle
+            center={[position.lat, position.lon]}
+            radius={radius}
+            pathOptions={{ color: "#0b3b2e", weight: 1.5, dashArray: "4 6", fillColor: "#c8f169", fillOpacity: 0.12 }}
+          />
+          <CircleMarker
+            center={[position.lat, position.lon]}
+            radius={9}
+            pathOptions={{ color: "#fff", weight: 3, fillColor: "#0b3b2e", fillOpacity: 1 }}
+          >
             <Popup>Você está aqui</Popup>
           </CircleMarker>
         </>
@@ -50,8 +60,8 @@ export function StoreMap({ position, radius, stores, onPick }: Props) {
           <CircleMarker
             key={s.id}
             center={[s.lat, s.lon]}
-            radius={chain ? 8 : 5}
-            pathOptions={{ color: "#fff", weight: 2, fillColor: chain?.color ?? "#94a3b8", fillOpacity: 0.95 }}
+            radius={chain ? 8 : 4}
+            pathOptions={{ color: "#fff", weight: 2, fillColor: chain?.color ?? "#9aa5a0", fillOpacity: chain ? 1 : 0.7 }}
           >
             <Popup>
               <strong>{s.name}</strong>
@@ -59,7 +69,9 @@ export function StoreMap({ position, radius, stores, onPick }: Props) {
               {formatDistance(s.distanceM)}
               {s.address && <> · {s.address}</>}
               <br />
-              {chain ? `Preços online: ${chain.name}` : "Sem preços online"}
+              <span style={{ color: chain ? "#0b3b2e" : "#6b7570" }}>
+                {chain ? `Preços online: ${chain.name}` : "Sem preços online"}
+              </span>
             </Popup>
           </CircleMarker>
         );
