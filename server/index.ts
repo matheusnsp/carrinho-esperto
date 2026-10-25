@@ -1,7 +1,7 @@
 import express, { type Response } from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { type ApiResult, chains, nearby, search } from "./handlers.js";
+import { type ApiResult, chains, search } from "./handlers.js";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
@@ -10,7 +10,6 @@ const send = (res: Response, r: ApiResult) => res.status(r.status).json(r.body);
 
 app.get("/api/chains", (_req, res) => send(res, chains()));
 app.get("/api/search", async (req, res) => send(res, await search(req.query as Record<string, string>)));
-app.get("/api/nearby", async (req, res) => send(res, await nearby(req.query as Record<string, string>)));
 
 if (process.env.NODE_ENV === "production") {
   const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");

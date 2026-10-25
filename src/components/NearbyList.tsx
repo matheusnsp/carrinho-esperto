@@ -10,23 +10,22 @@ interface Props {
 }
 
 export function NearbyList({ stores, selectedId, onSelect }: Props) {
-  if (!stores.length) return <p className="hint">Nenhum mercado encontrado nesse raio. Tente aumentar a distância.</p>;
-  const withPrices = stores.filter((s) => s.chainId);
-  const others = stores.filter((s) => !s.chainId);
+  if (!stores.length) return <p className="hint">Nenhuma loja das redes do app nesse raio. Tente aumentar a distância.</p>;
+  const chains = new Set(stores.map((s) => s.chainId)).size;
   return (
     <div className="nearby">
       <div className="nearby-stats">
         <div>
           <strong>{stores.length}</strong>
-          <span>mercados</span>
+          <span>{stores.length === 1 ? "loja" : "lojas"} por perto</span>
         </div>
         <div>
-          <strong>{withPrices.length}</strong>
-          <span>com preço online</span>
+          <strong>{chains}</strong>
+          <span>{chains === 1 ? "rede" : "redes"}</span>
         </div>
       </div>
       <ul>
-        {[...withPrices, ...others].slice(0, 30).map((s) => {
+        {stores.slice(0, 40).map((s) => {
           const chain = s.chainId ? chainById(s.chainId) : undefined;
           const open = s.id === selectedId;
           return (

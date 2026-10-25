@@ -7,7 +7,7 @@ Compare o preço de um produto nos supermercados perto de você.
 ## Como funciona
 
 1. **Localização**: o navegador pega sua posição (ou você clica no mapa).
-2. **Mercados próximos**: o navegador consulta o [OpenStreetMap](https://www.openstreetmap.org) (API Overpass, ou o [Photon](https://photon.komoot.io) se o Overpass estiver fora) e lista os supermercados num raio de 1 a 10 km.
+2. **Mercados próximos**: o app já vem com a lista das lojas das redes na Grande Rio (`shared/stores-rj.json`, gerada do OpenStreetMap), então mostra as mais perto na hora, sem depender de serviço externo. Cada loja tem botões de rota para Google Maps, Apple Maps e Waze.
 3. **Preços**: cada rede reconhecida que tem loja online na plataforma **VTEX** (Zona Sul, Prezunic, Hortifruti, Carrefour) é consultada pela API pública de busca:
    `https://<loja>/api/io/_v/api/intelligent-search/product_search/?query=arroz`
    **Guanabara** não vende online: o app lê a lista de preços que eles publicam no site (com validade) e busca nela.
@@ -54,6 +54,14 @@ tests/    testes
 ```
 
 O servidor existe porque os sites dos mercados não deixam o navegador chamar a API deles direto (CORS).
+
+## Atualizando a lista de lojas
+
+```bash
+npx tsx scripts/build-stores.mts
+```
+
+O script consulta o OpenStreetMap (via [Photon](https://photon.komoot.io)) e regrava `shared/stores-rj.json`. Se uma rede falhar, ele mantém as lojas que já estavam na lista.
 
 ## Adicionando um mercado
 

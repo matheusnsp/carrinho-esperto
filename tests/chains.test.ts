@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { matchChain } from "../shared/chains";
 import { distanceMeters } from "../shared/geo";
-import { parseElements } from "../shared/overpass";
 
 describe("matchChain", () => {
   it("reconhece redes pelo nome ou marca", () => {
@@ -24,72 +23,23 @@ describe("distanceMeters", () => {
   });
 });
 
-describe("parseElements", () => {
-  it("usa o centro de áreas e ordena por distância", () => {
-    const stores = parseElements(
-      [
-        { type: "way", id: 1, center: { lat: -22.98, lon: -43.19 }, tags: { name: "Prezunic" } },
-        { type: "node", id: 2, lat: -22.9712, lon: -43.1823, tags: { name: "Zona Sul" } },
-        { type: "node", id: 3, tags: { name: "Sem coordenada" } },
-      ],
-      -22.9711,
-      -43.1822,
-    );
-    expect(stores.map((s) => s.chainId)).toEqual(["zonasul", "prezunic"]);
+describe("nearbyStores", () => {
+  it("filtra pelo raio e ordena por distância", async () => {
+    const { nearbyStores } = await import("../shared/nearby");
+    const row = (id: string, lat: number, lon: number) => ({ id, name: id, lat, lon, chainId: "zonasul", address: null });
+    const stores = nearbyStores([row("longe", -22.9, -43.3), row("perto", -22.9712, -43.1823), row("medio", -22.98, -43.19)], -22.9711, -43.1822, 3000);
+    expect(stores.map((s) => s.id)).toEqual(["perto", "medio"]);
     expect(stores[0].distanceM).toBeLessThan(50);
   });
-});
 
-describe("queryOverpass", () => {
-  it("usa o primeiro servidor que responder, mesmo se outros falharem", async () => {
-    const { queryOverpass } = await import("../shared/overpass");
-    const realFetch = globalThis.fetch;
-    let calls = 0;
-    globalThis.fetch = (async (url: string) => {
-      calls++;
-      if (url.includes("overpass-api.de")) return new Response("busy", { status: 504 });
-      if (url.includes("kumi")) {
-        return Response.json({ elements: [{ type: "node", id: 9, lat: -22.97, lon: -43.18, tags: { name: "Prezunic" } }] });
-      }
-      return new Promise(() => {}); // servidor travado
-    }) as typeof fetch;
-    try {
-      const stores = await queryOverpass(-22.97, -43.18, 1000, { timeoutMs: 2000 });
-      expect(stores[0].chainId).toBe("prezunic");
-      expect(calls).toBe(4);
-    } finally {
-      globalThis.fetch = realFetch;
+  it("a lista de lojas do Rio tem todas as redes, com coordenadas no Rio", async () => {
+    const rows = (await import("../shared/stores-rj.json")).default as Array<{ chainId: string; lat: number; lon: number }>;
+    const { CHAINS } = await import("../shared/chains");
+    for (const c of CHAINS) expect(rows.filter((r) => r.chainId === c.id).length, c.name).toBeGreaterThan(0);
+    for (const r of rows) {
+      expect(r.lat).toBeGreaterThan(-23.2);
+      expect(r.lat).toBeLessThan(-22.5);
     }
-  });
-
-  it("dá um erro claro quando nenhum servidor responde", async () => {
-    const { queryOverpass } = await import("../shared/overpass");
-    const realFetch = globalThis.fetch;
-    globalThis.fetch = (async () => new Response("", { status: 429 })) as typeof fetch;
-    try {
-      await expect(queryOverpass(0, 0, 1000, { timeoutMs: 1000 })).rejects.toThrow(/Overpass HTTP 429/);
-    } finally {
-      globalThis.fetch = realFetch;
-    }
-  });
-});
-
-describe("Photon", () => {
-  it("filtra pelo raio, ignora o que não é mercado e remove repetidos", async () => {
-    const { parseFeatures } = await import("../shared/photon");
-    const f = (id: number, name: string, lon: number, lat: number, value = "supermarket") => ({
-      geometry: { coordinates: [lon, lat] },
-      properties: { osm_type: "N", osm_id: id, osm_key: "shop", osm_value: value, name, street: "Rua X", district: "Copacabana" },
-    });
-    const stores = parseFeatures(
-      [f(1, "Supermercado Zona Sul", -43.1823, -22.9712), f(1, "Supermercado Zona Sul", -43.1823, -22.9712), f(2, "Prezunic", -43.3, -22.9), f(3, "Farmácia", -43.1823, -22.9712, "chemist")],
-      -22.9711,
-      -43.1822,
-      3000,
-    );
-    expect(stores).toHaveLength(1);
-    expect(stores[0].chainId).toBe("zonasul");
-    expect(stores[0].address).toBe("Rua X - Copacabana");
   });
 });
 

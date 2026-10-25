@@ -3,7 +3,7 @@ import type { NearbyStore, SearchResponse } from "../shared/types";
 import { CHAINS } from "../shared/chains";
 import { SortMode, flattenOffers, groupByEan } from "../shared/compare";
 import { formatDistance } from "../shared/geo";
-import { fetchNearby, searchProducts } from "./api";
+import { findNearby, searchProducts } from "./api";
 import { useGeolocation } from "./useLocation";
 import { setCodec, usePersistentState } from "./usePersistentState";
 import { StoreMap } from "./components/StoreMap";
@@ -21,10 +21,6 @@ const RADII = [1000, 3000, 5000, 10000];
 export default function App() {
   const geo = useGeolocation();
   const [radius, setRadius] = usePersistentState("ce:raio", 3000);
-  const [stores, setStores] = useState<NearbyStore[]>([]);
-  const [storesLoading, setStoresLoading] = useState(false);
-  const [storesError, setStoresError] = useState<string | null>(null);
-  const [storesAttempt, setStoresAttempt] = useState(0);
   const [selectedStore, setSelectedStore] = useState<string | null>(null);
 
   const [query, setQuery] = useState("");
@@ -36,19 +32,10 @@ export default function App() {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!geo.position) return;
-    let cancelled = false;
-    setStoresLoading(true);
-    setStoresError(null);
-    fetchNearby(geo.position.lat, geo.position.lon, radius)
-      .then((s) => !cancelled && setStores(s))
-      .catch((e) => !cancelled && setStoresError(e.message))
-      .finally(() => !cancelled && setStoresLoading(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [geo.position, radius, storesAttempt]);
+  const stores = useMemo(
+    () => (geo.position ? findNearby(geo.position.lat, geo.position.lon, radius) : []),
+    [geo.position, radius],
+  );
 
   /** Loja mais próxima de cada rede (a lista já vem ordenada por distância). */
   const nearestStore = useMemo(() => {
@@ -246,16 +233,7 @@ export default function App() {
               onPick={geo.setPosition}
             />
             {geo.error && <div className="alert">{geo.error}</div>}
-            {storesLoading && <p className="hint">Procurando mercados…</p>}
-            {storesError && (
-              <div className="alert alert-error">
-                {storesError}
-                <button className="link-btn" onClick={() => setStoresAttempt((n) => n + 1)}>
-                  Tentar de novo
-                </button>
-              </div>
-            )}
-            {geo.position && !storesLoading && !storesError && (
+            {geo.position && (
               <NearbyList stores={stores} selectedId={selectedStore} onSelect={setSelectedStore} />
             )}
           </div>
